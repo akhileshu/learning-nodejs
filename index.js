@@ -2,8 +2,13 @@
 import { createServer } from "http";
 import { readFileSync } from "fs";
 
-const htmlPage = readFileSync("index.html", "utf-8");
-const jsonData = readFileSync("data.json", "utf-8");
+let htmlPage = readFileSync("index.html", "utf-8");
+const data = JSON.parse(readFileSync("data.json", "utf-8"));
+const product=data.products[0]
+
+// dynamic html 
+  htmlPage=htmlPage.replace('**title**',product.title).replace('**price**',product.price).replace('**rating**',product.rating).replace('**url**',product.thumbnail)
+
 
 // Create a local server
 const server = createServer((req, res) => {
@@ -16,7 +21,7 @@ const server = createServer((req, res) => {
       break;
     case "/json":
       res.setHeader("content-Type", "application/json");
-      res.end(jsonData);
+      res.end(JSON.stringify(data)); // Send the JSON data
       break;
     default:
       res.writeHead(404, "nt found");
