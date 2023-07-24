@@ -1,52 +1,72 @@
-// const http = require('http');
-import { createServer } from "http";
-import { readFileSync } from "fs";
+const fs = require("fs");
+const express = require("express");
+// 3 rd party midleware - logger
+const morgan = require("morgan");
 
-let htmlPage = readFileSync("index.html", "utf-8");
-const data = JSON.parse(readFileSync("data.json", "utf-8"));
-// const product = data.products[0];
+let htmlPage = fs.readFileSync("index.html", "utf-8");
+const data = JSON.parse(fs.readFileSync("data.json", "utf-8"));
+// server created
+const server = express();
+// code for server
 
-// dynamic html
-// htmlPage=htmlPage.replace('**title**',product.title).replace('**price**',product.price).replace('**rating**',product.rating).replace('**url**',product.thumbnail)
+server.use(morgan("dev")); //GET /public.html 304 3.294 ms - -
+server.use(morgan("default")); //::1 - - [Mon, 24 Jul 2023 00:59:17 GMT] "GET /public.html HTTP/1.1" 304 - "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
-// more advanced dynamic html to show all products
-const products = data.products;
-// Function to generate the HTML for each product
-function generateProductHTML(product) {
-  return `
-    <div class="product">
-      <h2>${product.title}</h2>
-      <p>Price: ${product.price}</p>
-      <p>Rating: ${product.rating}</p>
-      <img src="${product.thumbnail}" alt="${product.title}">
-    </div>
-  `;
-}
+// midleware - logger
+// server.use((req, res, next) => {
+//   console.log(req.method, req.ip, req.hostname, new Date());
+//   // GET ::1 localhost 2023-07-23T14:38:07.206Z
+//   next();
+// });
+// body parser
+server.use(express.json());
 
-// Replace the placeholder in the HTML with all the product items
-const allProductsHTML = products.map(generateProductHTML).join("");
-htmlPage = htmlPage.replace("<!-- Placeholder for product items -->", allProductsHTML);
+// for static hosting
+server.use(express.static("public"));
 
-// Create a local server
-const server = createServer((req, res) => {
-  console.log("requested");
-  console.log(req.url);
-  switch (req.url) {
-    case "/":
-      res.setHeader("content-Type", "text/html");
-      res.end(htmlPage);
-      break;
-    case "/json":
-      res.setHeader("content-Type", "application/json");
-      res.end(JSON.stringify(data)); // Send the JSON data
-      break;
-    default:
-      res.writeHead(404, "nt found");
-      res.end();
-  }
-  // res.setHeader("content-Type", "text/html");
-  // res.setHeader('content-Type','application/json')
-  // res.end(jsonData);
+const auth = (req, res, next) => {
+  // http://localhost:8080/?password=123->req.query
+  // if (req.body.password == 123) {
+    next();
+  // } else res.sendStatus(401);
+};
+
+// auth -middleware applies to whole server ,not to be done like this
+// server.use(auth)
+
+// api -endpoint -route
+// testing in postman
+server.post("/", auth, (req, res) => {
+  res.json({ type: "POST" });
+});
+server.delete("/", (req, res) => {
+  res.json({ type: "delete" });
+});
+server.put("/", (req, res) => {
+  res.json({ type: "put" });
+});
+server.patch("/", (req, res) => {
+  res.json({ type: "patch" });
 });
 
-server.listen(8000);
+server.get("/product/:id", auth, (req, res) => {
+  // id is dynamic
+  console.log(req.params)//{ id: '6' }
+  res.send("hello");
+  //     Send a response.
+
+  // Examples:
+
+  // res.send({ some: 'json' });
+  // res.send('<p>some html</p>');
+  // res.status(404).send('Sorry, cant find that');
+  // res.sendFile("C:/Users/akhilesh upadhyay/Pictures/Screenshots/Screenshot (45).png")
+  // res.sendStatus(404)
+  // res.sendStatus(201).send('<h1>hello</h1>')
+});
+
+// listen server
+server.listen(8080);
+// 3 ways to send data from clint to  server
+// query parameters , body , url parameters
+
