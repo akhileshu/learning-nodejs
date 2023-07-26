@@ -1,39 +1,59 @@
-const fs = require("fs");
-const products = JSON.parse(fs.readFileSync("data.json", "utf-8")).products;
+const {Product} = require("../model/product");
+// const Product = model.Product;
 
+exports.getAllProducts = async(req, res) => {
+  const products =await Product.find(/*{price:{$gt:600}}*/);
+  res.json(products);
+};
+exports.getProduct = async(req, res) => {
+  const id = req.params.id;
+  // product -> object
+  const product =await Product.findById(id);
+  res.json(product);
+};
+exports.replaceProduct = async(req, res) => {
+  const id = req.params.id;
+  try{
+    const doc =await Product.findOneAndReplace({_id:id},req.body,{new:true})
+    res.status(201).json(doc);
 
-exports.getAllProducts = (req, res) => {
-    res.json(products);
-  };
-  exports.getProduct = (req, res) => {
-    const id = +req.params.id;
-    // product -> object
-    const product = products.find((product) => product.id == id);
-    res.json(product);
-  };
-  exports.replaceProduct = (req, res) => {
-    const id = +req.params.id;
-    const productIndex = products.findIndex((product) => product.id === id);
-    products.splice(productIndex, 1, { id, ...req.body });
-    res.status(201).json();
-  };
-  exports.updateProduct = (req, res) => {
-    const id = +req.params.id;
-    const productIndex = products.findIndex((product) => product.id === id);
-    const product = products[productIndex];
-    products.splice(productIndex, 1, { ...product, ...req.body });
-    res.status(201).json();
-  };
-  exports.deleteProduct = (req, res) => {
-    const id = +req.params.id;
-    const productIndex = products.findIndex((product) => product.id === id);
-    const product = products[productIndex];
-    products.splice(productIndex, 1);
-    res.status(201).json(product);
-  };
-  exports.createProduct = (req, res) => {
-    // data form client
-    console.log(req.body);
-    products.push(req.body);
-    res.status(201).json(req.body);
-  };
+  }catch(error){
+console.log(error)
+res.status(400).json(error);
+  }
+};
+exports.updateProduct = async(req, res) => {
+  const id = req.params.id;
+  try{
+    const doc =await Product.findOneAndUpdate({_id:id},req.body,{new:true})
+    res.status(201).json(doc);
+
+  }catch(error){
+console.log(error)
+res.status(400).json(error);
+  }
+};
+exports.deleteProduct = async(req, res) => {
+  const id = req.params.id;
+  try{
+    const doc =await Product.findOneAndDelete({_id:id})
+    res.status(201).json(doc);
+
+  }catch(error){
+console.log(error)
+res.status(400).json(error);
+  }
+};
+exports.createProduct = async(req, res) => {
+  // data form client
+  // const product = new Product({ title: "phonex pro", rating: 5 });
+
+  try {
+    const product = new Product(req.body);
+    const savedProduct = await product.save();
+    res.status(201).json(savedProduct);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+  
+};
